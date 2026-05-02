@@ -1,27 +1,23 @@
 // Standee #4
 // Thin support stripes to hold disconnected parts together
-use <standee_lib.scad>;
+include <standee_lib.scad>;
 
-// SVG content: 72x75 px (auto-filled)
-standee(svg_width     = 72,
-        svg_height    = 75,
-        shape_width   = 40,
-        shape_thick   = 2,
-        s_leg_width   = 8,
-        s_leg_height  = 67,
-        s_leg_overlap = 10)
-    union() {
-        import("svgs/4.svg", center = true);
+standee(
+        svg_width     = DEFAULT_SVG_WIDTH,
+        shape_thick   = DEFAULT_THICKNESS,
+        s_leg_width   = DEFAULT_LEG_WIDTH,
+        s_leg_height  = DEFAULT_LEG_HEIGHT+7,
+        s_leg_overlap = DEFAULT_LEG_OVERLAP+7)
+    import("svgs/4.svg");
 
         // Vertical support stripes (1mm wide, full height)
-        //translate([-20, -37.5]) square([1, 75]);
-        translate([-15, -37.5]) square([1, 60]);
-        translate([0, -20.5])   square([1, 40]);
-        translate([14, -37.5])  square([1, 60]);
-        //translate([20, -37.5])  square([1, 75]);
+        //translate([-8.3, 0.0]) square([0.4, 31.2]);
+        translate([-6.2, 0.0]) square([0.4, 25.0]);
+        translate([0.0, 7.1])   square([0.4, 16.7]);
+        translate([5.8, 0.0])  square([0.4, 25.0]);
+        //translate([8.3, 0.0])  square([0.4, 31.2]);
 
         // Horizontal support stripes (1mm tall, full width)
-        translate([-35, -15.5]) square([70, 1]);
-        translate([-29, 0])   square([59, 1]);
-        translate([-24, 15])  square([48, 1]);
-    }
+        translate([-14.6, 9.2]) square([29.2, 0.4]);
+        translate([-12.1, 15.6])   square([24.6, 0.4]);
+        translate([-10.0, 21.9])  square([20.0, 0.4]);

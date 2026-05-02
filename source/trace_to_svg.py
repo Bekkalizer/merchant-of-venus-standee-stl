@@ -69,12 +69,17 @@ def trace_image_to_svg(input_path, output_path, threshold=128):
     # Translate all coordinates so the content starts at (0, 0).
     # OpenSCAD does not honour the viewBox origin offset, so we must
     # shift the geometry ourselves to keep import(center=true) correct.
+    # Normalize: width = 1mm, height = aspect ratio in mm.
+    # OpenSCAD imports this as a 1mm-wide shape, and the standee module
+    # scales by svg_width directly — no need to pass actual dimensions.
+    aspect = content_h / content_w
+    norm_w = 1
+    norm_h = aspect
+
     with open(output_path, "w") as f:
         f.write(f'<?xml version="1.0" encoding="UTF-8"?>\n')
-        # Use mm units so OpenSCAD imports 1 SVG unit = 1mm
-        # (without mm, OpenSCAD converts px at 96 DPI)
         f.write(f'<svg xmlns="http://www.w3.org/2000/svg" '
-                f'width="{content_w}mm" height="{content_h}mm" '
+                f'width="{norm_w}mm" height="{norm_h:.6f}mm" '
                 f'viewBox="0 0 {content_w} {content_h}">\n')
 
         for x, y, rw, rh in merged:
@@ -84,12 +89,11 @@ def trace_image_to_svg(input_path, output_path, threshold=128):
         f.write("</svg>\n")
 
     print(f"Wrote {output_path}: {len(merged)} rectangles, "
-          f"{content_w}x{content_h} px")
-    return content_w, content_h
+          f"{content_w}x{content_h} px, aspect {aspect:.3f}")
 
 
-def write_scad_wrapper(name, svg_path, w, h):
-    """Generate a per-shape .scad file with the SVG dimensions baked in.
+def write_scad_wrapper(name, svg_path):
+    """Generate a per-shape .scad file.
 
     Does NOT overwrite an existing .scad file (so user customizations
     are preserved).
@@ -102,15 +106,12 @@ def write_scad_wrapper(name, svg_path, w, h):
     with open(scad_path, "w") as f:
         f.write(f"// Standee #{name}\n")
         f.write(f"use <standee_lib.scad>;\n\n")
-        f.write(f"// SVG content: {w}x{h} px (auto-filled)\n")
-        f.write(f"standee(svg_width     = {w},\n")
-        f.write(f"        svg_height    = {h},\n")
-        f.write(f"        shape_width   = 40,\n")
+        f.write(f"standee(svg_width     = 40,\n")
         f.write(f"        shape_thick   = 2,\n")
         f.write(f"        s_leg_width   = 8,\n")
         f.write(f"        s_leg_height  = 60,\n")
         f.write(f"        s_leg_overlap = 3)\n")
-        f.write(f"    import(\"{svg_path}\", center = true);\n")
+        f.write(f"    import(\"{svg_path}\");\n")
 
     print(f"Wrote {scad_path}")
 
@@ -130,7 +131,6 @@ if __name__ == "__main__":
         name = os.path.basename(input_file).rsplit(".", 1)[0]
         svg_file = os.path.join(svg_dir, name + ".svg")
         print(f"\n--- {name} ---")
-        w, h = trace_image_to_svg(input_file, svg_file)
-        # .scad wrapper references SVG relative to source/ directory
+        trace_image_to_svg(input_file, svg_file)
         svg_rel = f"svgs/{name}.svg"
-        write_scad_wrapper(name, svg_rel, w, h)
+        write_scad_wrapper(name, svg_rel)

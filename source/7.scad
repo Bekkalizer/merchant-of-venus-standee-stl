@@ -1,18 +1,14 @@
 // Standee #7
-use <standee_lib.scad>;
+include <standee_lib.scad>;
 
-// SVG content: 76x70 px (auto-filled)
-standee(svg_width     = 76,
-        svg_height    = 70,
-        shape_width   = 40,
-        shape_thick   = 2,
-        s_leg_width   = 8,
-        s_leg_height  = 60+6,
-        s_leg_overlap = 3+6)
-    union() {
-        import("svgs/7.svg", center = true);
-        translate([-14, -31.5]) square([1, 60]);
-        translate([14, -31.5]) square([1, 60]);
-        translate([-28, -23]) square([1, 35]);
-        translate([28, -22]) square([1, 35]);
-    }
+standee(
+        svg_width     = DEFAULT_SVG_WIDTH,
+        shape_thick   = DEFAULT_THICKNESS,
+        s_leg_width   = DEFAULT_LEG_WIDTH,
+        s_leg_height  = DEFAULT_LEG_HEIGHT+6,
+        s_leg_overlap = DEFAULT_LEG_OVERLAP+6)
+    import("svgs/7.svg");
+        translate([-5.5, 1.4]) square([0.4, 23.7]);
+        translate([5.5, 1.4]) square([0.4, 23.7]);
+        translate([-11.1, 4.7]) square([0.4, 13.8]);
+        translate([11.1, 5.1]) square([0.4, 13.8]);

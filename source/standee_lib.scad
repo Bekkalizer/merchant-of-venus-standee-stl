@@ -1,19 +1,19 @@
 // standee_lib.scad — shared modules for standee + base
 //
-// All model dimensions are passed as named arguments to standee() and base()
-// with sensible defaults. SVG dimensions (svg_width, svg_height) are
-// auto-filled by trace_to_svg.py when generating the per-shape .scad files.
+// SVGs are normalized to 1mm wide by trace_to_svg.py.
+// The standee module scales by svg_width directly — no SVG-specific
+// parameters needed. Swap in any 1mm-wide SVG and it just works.
 
 // --- Default dimensions ---
 
-// Shape (standee body)
-DEFAULT_SHAPE_WIDTH     = 40;     // mm — physical width of the shape
+// Shape
+DEFAULT_SVG_WIDTH       = 30;     // mm — width of the shape (height auto-scales)
 DEFAULT_THICKNESS       = 2;      // mm — extrusion thickness (shape & leg)
 
 // Leg (peg under the shape)
-DEFAULT_LEG_WIDTH       = 8;      // mm — width of the leg (4× thickness)
-DEFAULT_LEG_HEIGHT      = 60;     // mm — total length of the leg
-DEFAULT_LEG_OVERLAP     = 3;      // mm — how far the leg extends into the shape
+DEFAULT_LEG_WIDTH       = 4;      // mm
+DEFAULT_LEG_HEIGHT      = 40;     // mm
+DEFAULT_LEG_OVERLAP     = 3;      // mm — how far leg extends into shape
 DEFAULT_LEG_TOLERANCE   = 0.2;    // mm — push-fit gap per side
 
 // Base
@@ -25,44 +25,45 @@ DEFAULT_BASE_FILLET     = 1.5;    // mm — corner rounding
 
 // --- Modules ---
 
-// Standee: extrude a 2D SVG shape (passed as child) + leg as a single piece.
+// Standee: extrude a 2D SVG shape + optional support stripes + leg.
 //
-//   svg_width, svg_height: source SVG dimensions in px (auto-filled by tracer)
-//   width:        physical width of the shape in mm (height auto-scales)
-//   thickness:    extrusion thickness — shared by shape and leg
-//   leg_width:    width of the leg
-//   leg_height:   total length of the leg
-//   leg_overlap:  how far the top of the leg extends into the shape
-module standee(svg_width, svg_height,
-               shape_width   = DEFAULT_SHAPE_WIDTH,
+// First child = SVG import (gets scaled to svg_width mm)
+// Additional children = support stripes in mm coordinates (not scaled)
+//
+// The SVG must be normalized to 1mm wide (trace_to_svg.py does this).
+// Import WITHOUT center=true.
+//
+//   svg_width:    desired width in mm (height auto-scales with aspect ratio)
+//   shape_thick:  extrusion thickness
+//   s_leg_width:  width of the leg
+//   s_leg_height: total length of the leg
+//   s_leg_overlap: how far leg extends into the shape
+module standee(svg_width     = DEFAULT_SVG_WIDTH,
                shape_thick   = DEFAULT_THICKNESS,
                s_leg_width   = DEFAULT_LEG_WIDTH,
                s_leg_height  = DEFAULT_LEG_HEIGHT,
                s_leg_overlap = DEFAULT_LEG_OVERLAP) {
 
-    sf = shape_width / svg_width;
-    sh = svg_height * sf;
-    sb = -sh / 2;
-
-    lt = sb + s_leg_overlap;
-    lb = lt - s_leg_height;
-
     linear_extrude(height = shape_thick)
         union() {
-            scale([sf, sf])
-                children();
-            translate([-s_leg_width/2, lb])
+            // Shape: first child, scaled to svg_width, centered on X
+            translate([-svg_width/2, 0])
+                scale([svg_width, svg_width])
+                    children(0);
+
+            // Extra children (support stripes etc.) — unscaled, in mm
+            if ($children > 1)
+                for (i = [1:$children-1])
+                    children(i);
+
+            // Leg: centered on X, extending downward from Y=s_leg_overlap
+            translate([-s_leg_width/2, s_leg_overlap - s_leg_height])
                 square([s_leg_width, s_leg_height]);
         }
 }
 
 // Base: rounded rectangular plate with a slot matching the leg cross-section.
-// Printed upside down (slot opens upward) to avoid bridging on the print bed.
-//
-//   base_width, base_depth, base_height: base dimensions in mm
-//   leg_width, leg_thickness:            leg cross-section (must match standee)
-//   tolerance:                           push-fit gap per side
-//   fillet:                              corner radius
+// Printed upside down (slot opens upward on print bed).
 module base(base_width    = DEFAULT_BASE_WIDTH,
             base_depth    = DEFAULT_BASE_DEPTH,
             base_height   = DEFAULT_BASE_HEIGHT,
@@ -77,7 +78,6 @@ module base(base_width    = DEFAULT_BASE_WIDTH,
     translate([0, 0, base_height])
     rotate([180, 0, 0])
     difference() {
-        // Rounded base block
         translate([0, 0, base_height/2])
             minkowski() {
                 cube([base_width - 2*fillet,
@@ -85,7 +85,6 @@ module base(base_width    = DEFAULT_BASE_WIDTH,
                       base_height - 1], center = true);
                 cylinder(r = fillet, h = 1, $fn = 32);
             }
-        // Slot — goes all the way through the base
         translate([-slot_w/2, -slot_d/2, -0.01])
             cube([slot_w, slot_d, base_height + 0.02]);
     }
