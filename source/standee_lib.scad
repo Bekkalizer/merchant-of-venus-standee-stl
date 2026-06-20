@@ -16,6 +16,11 @@ DEFAULT_LEG_HEIGHT      = 40;     // mm
 DEFAULT_LEG_OVERLAP     = 3;      // mm — how far leg extends into shape
 DEFAULT_LEG_TOLERANCE   = 0.2;    // mm — push-fit gap per side
 
+// Support stripes (the thin bridges that bind floating parts together)
+DEFAULT_SUPPORT_Y_OFFSET = 1;     // mm — lift ALL supports up into the shape
+                                  // so their bottoms tuck inside the
+                                  // silhouette (flat, support-free printing)
+
 // Base
 DEFAULT_BASE_WIDTH      = 30;     // mm — X dimension
 DEFAULT_BASE_DEPTH      = 15;     // mm — Y dimension
@@ -38,11 +43,12 @@ DEFAULT_BASE_FILLET     = 1.5;    // mm — corner rounding
 //   s_leg_width:  width of the leg
 //   s_leg_height: total length of the leg
 //   s_leg_overlap: how far leg extends into the shape
-module standee(svg_width     = DEFAULT_SVG_WIDTH,
-               shape_thick   = DEFAULT_THICKNESS,
-               s_leg_width   = DEFAULT_LEG_WIDTH,
-               s_leg_height  = DEFAULT_LEG_HEIGHT,
-               s_leg_overlap = DEFAULT_LEG_OVERLAP) {
+module standee(svg_width        = DEFAULT_SVG_WIDTH,
+               shape_thick      = DEFAULT_THICKNESS,
+               s_leg_width      = DEFAULT_LEG_WIDTH,
+               s_leg_height     = DEFAULT_LEG_HEIGHT,
+               s_leg_overlap    = DEFAULT_LEG_OVERLAP,
+               support_y_offset = DEFAULT_SUPPORT_Y_OFFSET) {
 
     linear_extrude(height = shape_thick)
         union() {
@@ -51,10 +57,13 @@ module standee(svg_width     = DEFAULT_SVG_WIDTH,
                 scale([svg_width, svg_width])
                     children(0);
 
-            // Extra children (support stripes etc.) — unscaled, in mm
+            // Extra children (support stripes etc.) — unscaled, in mm.
+            // Lifted uniformly by support_y_offset so their bottoms tuck
+            // into the shape instead of hanging below it.
             if ($children > 1)
-                for (i = [1:$children-1])
-                    children(i);
+                translate([0, support_y_offset])
+                    for (i = [1:$children-1])
+                        children(i);
 
             // Leg: centered on X, extending downward from Y=s_leg_overlap
             translate([-s_leg_width/2, s_leg_overlap - s_leg_height])

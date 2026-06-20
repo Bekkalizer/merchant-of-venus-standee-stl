@@ -6,5 +6,7 @@ standee(
         shape_thick   = DEFAULT_THICKNESS,
         s_leg_width   = DEFAULT_LEG_WIDTH,
         s_leg_height  = DEFAULT_LEG_HEIGHT,
-        s_leg_overlap = DEFAULT_LEG_OVERLAP)
+        s_leg_overlap = DEFAULT_LEG_OVERLAP){
     import("svgs/1.svg");
+            translate([-10.6, 1.2]) square([21, 0.4]);
+}
